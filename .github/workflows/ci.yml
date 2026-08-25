@@ -13,6 +13,7 @@ jobs:
       matrix:
         runner: [ubuntu-latest, ubuntu-24.04-arm, macos-latest, macos-15-intel]
     runs-on: ${{ matrix.runner }}
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
       - name: Install musl toolchain
@@ -20,3 +21,7 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y musl-tools
       - run: make check
       - run: ls -l osc52 && file osc52
+      - name: Verify the code signature
+        if: runner.os == 'macOS' && runner.arch == 'ARM64'
+        run: codesign --verify --verbose osc52 # Apple silicon won't run it otherwise
+
