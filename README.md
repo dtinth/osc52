@@ -45,13 +45,20 @@ make        # builds ./osc52
 make check  # builds, then runs the tests (Python 3, stdlib only)
 ```
 
-Pushing a `v*` tag builds all four targets and publishes them as a release;
-running the Release workflow by hand does the same build without publishing.
-
 Roughly 60 lines of C, no dependencies. On Linux the Makefile picks up
 `musl-gcc` when it is installed, which is how the released binaries — about
 5 KB, fully static — are built. It encodes at just under 1 GB/s and a run
 with a small payload costs about 0.3 ms, most of which is `execve`.
+
+## Releasing
+
+Releases cut themselves. A push to `main` carrying a `feat:`, `fix:`, `perf:`
+or a breaking change ([Conventional
+Commits](https://www.conventionalcommits.org/)) builds all four targets, tags
+the next version and publishes it; `docs:`, `chore:` and friends release
+nothing. Before 1.0 a breaking change bumps the minor rather than the major.
+To force a particular version, run the Release workflow by hand and give it
+one — left empty it builds without publishing.
 
 ## License
 

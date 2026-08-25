@@ -1,15 +1,35 @@
 name: Release
 
+# Every push to main that carries a feat/fix/perf or a breaking change cuts a
+# release: the version comes from the commit messages, and the release job
+# creates the tag. Running this workflow by hand builds without publishing,
+# unless you give it a version to release.
+
 on:
   push:
-    tags: ["v*"]
-  workflow_dispatch: # builds and packages without publishing, to test this workflow
-
-env:
-  VERSION: ${{ github.ref_type == 'tag' && github.ref_name || 'dryrun' }}
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version to release, e.g. v1.2.3. Leave empty to build without publishing.
+        default: ""
 
 jobs:
+  version:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      tag: ${{ inputs.version || steps.next.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0 # the version is derived from the tags and the commits
+      - id: next
+        run: echo "tag=$(.github/next-version.sh)" >> "$GITHUB_OUTPUT"
+
   build:
+    needs: version
+    if: needs.version.outputs.tag != ''
     strategy:
       fail-fast: false
       matrix:
@@ -30,20 +50,22 @@ jobs:
         if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y musl-tools
       - run: make check
-      - run: tar czf osc52-$VERSION-${{ matrix.target }}.tar.gz osc52
+      - run: tar czf osc52-$TAG-${{ matrix.target }}.tar.gz osc52
         env:
+          TAG: ${{ needs.version.outputs.tag }}
           COPYFILE_DISABLE: 1 # keep macOS tar from adding ._ files
       - uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.target }}
           path: osc52-*.tar.gz
 
-  release:
-    needs: build
-    if: github.ref_type == 'tag'
+  publish:
+    needs: [version, build]
+    if: github.event_name == 'push' || inputs.version != ''
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
-      contents: write
+      contents: write # to create the tag and the release
     steps:
       - uses: actions/download-artifact@v8
         with:
@@ -51,5 +73,7 @@ jobs:
           merge-multiple: true
       - uses: softprops/action-gh-release@v3
         with:
+          tag_name: ${{ needs.version.outputs.tag }}
+          target_commitish: ${{ github.sha }}
           files: dist/*.tar.gz
           generate_release_notes: true
