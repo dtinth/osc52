@@ -45,6 +45,9 @@ make        # builds ./osc52
 make check  # builds, then runs the tests (Python 3, stdlib only)
 ```
 
+Pushing a `v*` tag builds all four targets and publishes them as a release;
+running the Release workflow by hand does the same build without publishing.
+
 Roughly 60 lines of C, no dependencies. On Linux the Makefile picks up
 `musl-gcc` when it is installed, which is how the released binaries — about
 5 KB, fully static — are built. It encodes at just under 1 GB/s and a run

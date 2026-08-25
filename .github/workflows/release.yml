@@ -3,6 +3,10 @@ name: Release
 on:
   push:
     tags: ["v*"]
+  workflow_dispatch: # builds and packages without publishing, to test this workflow
+
+env:
+  VERSION: ${{ github.ref_type == 'tag' && github.ref_name || 'dryrun' }}
 
 jobs:
   build:
@@ -26,7 +30,7 @@ jobs:
         if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y musl-tools
       - run: make check
-      - run: tar czf osc52-${{ github.ref_name }}-${{ matrix.target }}.tar.gz osc52
+      - run: tar czf osc52-$VERSION-${{ matrix.target }}.tar.gz osc52
         env:
           COPYFILE_DISABLE: 1 # keep macOS tar from adding ._ files
       - uses: actions/upload-artifact@v7
@@ -36,6 +40,7 @@ jobs:
 
   release:
     needs: build
+    if: github.ref_type == 'tag'
     runs-on: ubuntu-latest
     permissions:
       contents: write
