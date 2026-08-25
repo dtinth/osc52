@@ -4,8 +4,7 @@ CFLAGS += -fno-asynchronous-unwind-tables -fno-unwind-tables \
 
 ifeq ($(shell uname -s),Darwin)
 CFLAGS += -mmacosx-version-min=11.0
-LDFLAGS += -Wl,-dead_strip -Wl,-no_uuid -Wl,-no_function_starts \
-           -Wl,-no_data_in_code_info
+LDFLAGS += -Wl,-dead_strip
 STRIPFLAGS = -x
 else
 # musl links a fully static binary a fraction of the size of a glibc one

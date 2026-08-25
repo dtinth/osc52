@@ -9,6 +9,7 @@ import fcntl
 import os
 import random
 import select
+import signal
 import subprocess
 import sys
 import tempfile
@@ -38,7 +39,7 @@ def run_detached(data):
     """Run osc52 with no controlling terminal, so it must fall back to stderr."""
     return subprocess.run(
         [EXE], input=data, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-        start_new_session=True,
+        start_new_session=True, timeout=60,
     )
 
 
@@ -76,6 +77,7 @@ def run_on_tty(data):
         if not select.select([master], [], [], 10)[0]:
             break  # timed out
         output += os.read(master, 4096)
+    os.kill(pid, signal.SIGKILL)  # a no-op once it has exited on its own
     os.waitpid(pid, 0)
     os.close(master)
     os.close(slave)
