@@ -20,3 +20,7 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y musl-tools
       - run: make check
       - run: ls -l osc52 && file osc52
+      - name: Inspect the code signature
+        if: runner.os == 'macOS'
+        run: codesign --verify --verbose osc52 || echo "SIGNATURE CHECK FAILED"
+
